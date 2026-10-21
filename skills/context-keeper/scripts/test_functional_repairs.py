@@ -42,6 +42,59 @@ class FunctionalRepairs(unittest.TestCase):
         path.write_text(text, encoding='utf-8')
         return path
 
+    def test_ingest_then_correct_reuses_captured_replacement_and_keeps_history(self):
+        self.write('## Decisions\nRetain raw inputs for 7 days.\n')
+        ingest(self.s, self.project, scope='build')
+        old=self.s.current()[0]['id']
+        self.write('## Decisions\nRetain raw inputs for 14 days.\n')
+        ingest(self.s, self.project, scope='build')
+        replacement=next(r['id'] for r in self.s.current() if '14 days' in r['text'])
+        self.assertEqual(self.s.correct(old,'Retain raw inputs for 14 days.'),replacement)
+        self.assertEqual([r['id'] for r in self.s.current()],[replacement])
+        self.assertEqual(self.s.get(old)['superseded_by'],replacement)
+        self.assertEqual(self.s.get(replacement)['supersedes'],old)
+        self.assertTrue(self.s.history(old))
+        self.assertTrue(any(h['field']=='supersedes' for h in self.s.history(replacement)))
+        code,out=self.command('brief','retention','--scope','build')
+        self.assertEqual(code,0)
+        self.assertEqual(out.count('Retain raw inputs for 14 days.'),1)
+
+    def test_reused_correction_retains_mandatory_policy_and_amendments(self):
+        old=self.s.add('constraint','Original policy',mandatory=True)
+        replacement=self.s.add('constraint','Revised policy')
+        amendment=self.s.add('decision','Only the storage clause changes')
+        self.s.amend(old,amendment,'Storage only')
+        self.assertEqual(self.s.correct(old,'Revised policy'),replacement)
+        self.assertTrue(self.s.get(replacement)['mandatory'])
+        self.assertTrue(any(link['base_id']==replacement and link['amendment_id']==amendment for link in self.s.amendments()))
+
+    def test_correction_identity_does_not_merge_other_sources_scopes_or_kinds(self):
+        one=self.s.add_source('one.md',origin=str(self.project))
+        two=self.s.add_source('two.md',origin=str(self.project))
+        old=self.s.add('decision','Old ruling',scope='build',source_id=one)
+        foreign=[self.s.add('decision','New ruling',scope='review',source_id=one),
+                 self.s.add('decision','New ruling',scope='build',source_id=two),
+                 self.s.add('fact','New ruling',scope='build',source_id=one)]
+        replacement=self.s.correct(old,'New ruling')
+        self.assertNotIn(replacement,foreign)
+        self.assertTrue(all(self.s.get(i)['status']=='current' for i in foreign))
+
+    def test_reuse_refuses_ambiguous_history_or_same_amendment_group_without_writes(self):
+        for mode in ('history','group','duplicates'):
+            with self.subTest(mode=mode):
+                old=self.s.add('decision','Old '+mode)
+                if mode=='history':
+                    prior=self.s.add('decision','Earlier '+mode)
+                    target=self.s.correct(prior,'New '+mode)
+                else:
+                    target=self.s.add('decision','New '+mode)
+                    if mode=='group': self.s.amend(old,target,'Partial change')
+                    else: self.s.add('decision','New '+mode)
+                before=self.db.read_bytes()
+                with self.assertRaises(ContextError):self.s.correct(old,'New '+mode)
+                self.assertEqual(self.db.read_bytes(),before)
+                self.assertEqual(self.s.get(old)['status'],'current')
+
     def test_native_read_commands_use_enforced_readonly_connection(self):
         self.s.add('decision', 'Use the local adapter', scope='build')
         brief = self.root / 'brief.md'

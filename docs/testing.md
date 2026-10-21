@@ -17,7 +17,7 @@ Use a fresh demo directory. If your host requires a database overview/notes chec
 
 ## Covered behavior
 
-The Context Keeper suite contains 106 tests, covering the core retained-history workflow and targeted capture/retrieval/upgrade regressions. Shared installer tests separately exercise local-edit refusal, both Windows directory-rename failure points, verified external backups and rollback after failed transfers.
+The Context Keeper suite contains 110 tests, covering the core retained-history workflow and targeted capture/retrieval/upgrade regressions. Shared installer tests separately exercise local-edit refusal, both Windows directory-rename failure points, verified external backups and rollback after failed transfers.
 
 Coverage includes:
 

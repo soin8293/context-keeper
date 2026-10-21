@@ -14,3 +14,5 @@ First standalone release candidate of the maintained Context Keeper skill/runtim
 - Synthetic demonstrations, behavior tests, migration guidance and clean-setup CI.
 
 The release does not introduce semantic truth inference, distributed writers, automatic host injection or a model dependency. Older project runners require a controlled upgrade; installing the skill alone does not migrate them.
+
+- Ingest-first corrections reuse an unambiguous captured replacement, retaining history and policy without adding duplicate current context. Conflicting correction/amendment lineage requires explicit review.

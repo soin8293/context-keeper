@@ -281,35 +281,50 @@ class Store:
         new_text = (new_text or "").strip()
         if not new_text:
             raise ContextError("correction text must not be empty")
+        target_scope = scope if scope is not None else old["scope"]
+        matches = list(self.conn.execute(
+            "SELECT * FROM record WHERE status='current' AND id!=? AND kind=? "
+            "AND scope=? AND text=? AND source_id IS ? ORDER BY id",
+            (rid, old['kind'], target_scope, new_text, old['source_id']),
+        ))
+        # Ingest-first maintenance may already have captured the replacement.
+        # Reuse only an unambiguous endpoint without rewriting prior lineage.
+        if len(matches) > 1:
+            raise ContextError('Multiple matching current replacements; inspect and reconcile duplicates first.')
+        existing = matches[0] if matches else None
+        if existing is not None:
+            if existing['supersedes'] is not None:
+                raise ContextError(f"Matching record #{existing['id']} already has correction history; inspect both records and retire the obsolete one explicitly.")
+            if existing['id'] in self.linked({rid: old}):
+                raise ContextError('Matching replacement belongs to the same amendment group; review the relationship before correcting.')
         ts = now()
-        cur = self.conn.execute(
-            "INSERT INTO record (kind, scope, text, status, supersedes, source_id, created_at, updated_at)"
-            " VALUES (?,?,?, 'current', ?, ?,?,?)",
-            (
-                old["kind"],
-                scope if scope is not None else old["scope"],
-                new_text,
-                rid,
-                old["source_id"],
-                ts,
-                ts,
-            ),
-        )
-        new_id = int(cur.lastrowid)
-        self.conn.execute('UPDATE record SET mandatory=? WHERE id=?', (old['mandatory'], new_id))
-        # Partial amendments remain attached when either endpoint is corrected.
-        for link in list(self.conn.execute('SELECT * FROM amendment WHERE base_id=? OR amendment_id=?', (rid, rid))):
-            self.conn.execute('INSERT OR IGNORE INTO amendment VALUES (?,?,?)',
-                              (new_id if link['base_id'] == rid else link['base_id'],
-                               new_id if link['amendment_id'] == rid else link['amendment_id'], link['reason']))
-        self.conn.execute(
-            "UPDATE record SET status='superseded', superseded_by=?, updated_at=? WHERE id=?",
-            (new_id, ts, rid),
-        )
-        self._log(rid, "status", "current", "superseded", reason or f"superseded by #{new_id}")
-        self._log(new_id, "text", None, new_text, reason or f"corrects #{rid}")
-        self._event("correct", f"#{rid} -> #{new_id}")
-        self.conn.commit()
+        with self.conn:
+            if existing is None:
+                cur = self.conn.execute(
+                    "INSERT INTO record (kind,scope,text,status,supersedes,source_id,created_at,updated_at,mandatory)"
+                    " VALUES (?,?,?,'current',?,?,?,?,?)",
+                    (old['kind'], target_scope, new_text, rid, old['source_id'], ts, ts, old['mandatory']),
+                )
+                new_id = int(cur.lastrowid)
+                self._log(new_id, 'text', None, new_text, reason or f'corrects #{rid}')
+            else:
+                new_id = existing['id']
+                self.conn.execute('UPDATE record SET supersedes=?,mandatory=?,updated_at=? WHERE id=?',
+                                  (rid, int(bool(old['mandatory'] or existing['mandatory'])), ts, new_id))
+                self._log(new_id, 'supersedes', None, str(rid), reason or f'corrects #{rid}; reuses captured replacement')
+                if old['mandatory'] and not existing['mandatory']:
+                    self._log(new_id, 'mandatory', '0', '1', 'retained mandatory policy from corrected record')
+            # Partial amendments remain attached when either endpoint is corrected.
+            for link in list(self.conn.execute('SELECT * FROM amendment WHERE base_id=? OR amendment_id=?', (rid, rid))):
+                self.conn.execute('INSERT OR IGNORE INTO amendment VALUES (?,?,?)',
+                                  (new_id if link['base_id'] == rid else link['base_id'],
+                                   new_id if link['amendment_id'] == rid else link['amendment_id'], link['reason']))
+            self.conn.execute(
+                "UPDATE record SET status='superseded',superseded_by=?,updated_at=? WHERE id=?",
+                (new_id, ts, rid),
+            )
+            self._log(rid, 'status', 'current', 'superseded', reason or f'superseded by #{new_id}')
+            self._event('correct', f'#{rid} -> #{new_id}')
         return new_id
 
     def retire(self, rid: int, reason: str | None = None) -> None:

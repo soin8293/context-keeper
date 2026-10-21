@@ -18,13 +18,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
           cache: pip
+          cache-dependency-path: requirements-dev.txt
       - run: python -X utf8 -m pip install -r requirements-dev.txt
       - run: python -X utf8 scripts/skills.py check
       - run: python -X utf8 scripts/check_release.py
