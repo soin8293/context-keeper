@@ -1,6 +1,6 @@
 # Architecture
 
-Context Keeper turns selected project documents into a current record of decisions, rules and progress. It uses that record to prepare a handoff for the next task, while keeping earlier decisions available in history.
+Context Keeper is an Agent Skill packaged in `skills/context-keeper/`. The coding agent reads `SKILL.md` for the workflow and runs bundled Python scripts to save, retrieve and update project context. This page describes that skill package and the helper implementation.
 
 This page explains the implementation. Start with the [usage guide](usage.md) for everyday operation.
 
@@ -10,12 +10,14 @@ The original documents explain what the project decided. Context Keeper saves in
 
 When an agent resumes work, the Python command-line tool selects context for that task and exports a Markdown brief. Its size allowance keeps the handoff manageable; its coverage section shows what was left out. A later check can detect changes to the saved context or the source files.
 
-The reusable skill supplies instructions for this workflow. It tells the agent where to look for the project's store, how to retrieve context and who may maintain it. The host still determines how the skill is discovered and how the brief reaches the agent.
+The skill instructions govern how the agent uses this helper: locate the existing store, retrieve task context, inspect sources and omissions, and leave updates to the authorized writer. The host determines how the skill is discovered and how the brief reaches the agent.
 
 ## Components
 
 | Component | Responsibility |
 | --- | --- |
+| [SKILL.md](../skills/context-keeper/SKILL.md) | Agent instruction entrypoint: when to use Context Keeper and how to retrieve and maintain the project's context |
+| [references](../skills/context-keeper/references/) | Detailed helper commands, source-selection behavior and retained-runtime upgrade instructions, loaded when needed |
 | [store.py](../skills/context-keeper/scripts/contextkeeper/store.py) | Record/source storage, retained history, explicit corrections and amendment relationships; read-only schema checks and migration preservation manifests |
 | [ingest.py](../skills/context-keeper/scripts/contextkeeper/ingest.py) | Bounded Markdown discovery, extraction, deduplication, source drift and writer acknowledgments |
 | [brief.py](../skills/context-keeper/scripts/contextkeeper/brief.py) | Task ranking, whole-group packing, source citations, coverage and complete-output limits |

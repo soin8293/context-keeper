@@ -1,6 +1,6 @@
 # Testing and evidence
 
-The checks exercise the work Context Keeper is meant to support: save project context, preserve it when a decision changes, build a useful handoff and notice when that handoff needs review.
+Context Keeper includes agent instructions and a Python helper. The automated checks validate the skill package's structure and the helper's behavior: saving context, retaining decision history, generating briefs and detecting changes. They do not run a coding agent through every instruction or certify host-specific skill discovery.
 
 Tests use temporary fictional projects, and the demo runs the actual installed project tool. This page explains how to repeat the checks and where their coverage ends.
 

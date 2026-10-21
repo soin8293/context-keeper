@@ -1,58 +1,71 @@
 # Context Keeper
 
-Context Keeper is a skill that helps AI agents keep track of project decisions and pick up where they left off between sessions.
+Context Keeper is an [Agent Skill](https://agentskills.io/home) that teaches a coding agent how to save, retrieve and update project context between sessions.
+
+The agent reads the instructions in [`SKILL.md`](skills/context-keeper/SKILL.md) and uses the bundled Python scripts to store decisions, look up current instructions and prepare a brief for its next task.
 
 Maintained by [AmirahCo](https://www.amirahco.us/).
 
 [![Checks](https://github.com/soin8293/context-keeper/actions/workflows/checks.yml/badge.svg)](https://github.com/soin8293/context-keeper/actions/workflows/checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Why it exists
+## How the agent uses it
 
-You return to a project, start a new chat, or hand work to another agent. The files are still there, but the reasoning is scattered: what was approved, which approach was dropped, what must stay unchanged, and what happens next. Reconstructing all of that takes time. An old summary can also carry a decision that has since changed.
+Install the `skills/context-keeper/` folder in your coding agent's skill directory. Its name and description tell a skills-compatible agent when to load the full `SKILL.md` instructions. You can also ask your agent to use Context Keeper explicitly. Skill discovery and invocation follow your agent's own interface.
 
-Context Keeper keeps a local record of that project context, linked to the documents it came from. When you are ready to continue, it builds a short handoff for the task at hand. The handoff shows the selected decisions, their sources, and anything left out or needing review.
+For example, ask:
 
-When a decision changes, the earlier version stays in the history. You can see both what applies now and how the project got there.
+> Use context-keeper to resume work on the adapter trial. Find this project's existing context store and retrieve the decisions and restrictions relevant to that task.
 
-## What using it looks like
+The skill instructs the agent to find the existing store, retrieve the relevant records, check their sources and report missing or outdated context. When an authorized decision changes, it tells the project's designated writer how to update the record while preserving the earlier version.
 
-Suppose a project is testing a new adapter. The owner approves a trial with synthetic data, assigns the trial to a builder, and later says the report must stay local until publication is approved.
+Here, **project context** means saved decisions, constraints and current state: for example, “use synthetic data for the trial,” “the builder owns this task,” and “keep the report local until publication is approved.” The [example brief](examples/expected-handoff.md) shows these instructions together with links to their sources.
 
-The next agent needs those instructions together. Context Keeper can put them in one handoff, include the later publication restriction, and retain the earlier requirement to keep audit logs. Each item links back to its source so the agent can check the original wording.
-
-See the [example handoff](examples/expected-handoff.md) for the actual output from this scenario.
-
-The everyday workflow is:
-
-1. **Save the project context.** Keep decisions, rules and progress in selected project documents. The person or agent responsible for maintaining the store imports and reviews that material.
-2. **Ask for context for a task.** Generate a brief such as “resume the adapter trial,” choosing the relevant areas of the project.
-3. **Read and check the handoff.** Give it to the agent continuing the work. Follow its source links and review any omissions or unresolved changes.
-4. **Keep it current.** As the project changes, review the affected records, correct what changed, and create a new brief.
-
-The [usage guide](docs/usage.md) walks through those steps and explains the terms used in the commands.
+The [usage guide](docs/usage.md) explains agent invocation and the helper commands behind this workflow.
 
 ## How it fits into your project
 
-The skill tells an agent how to save project context, find it again and keep it current. It includes a local Python runner that stores the records and generates handoffs. Each project chooses who may update its saved context.
+`skills/context-keeper/` is the installable skill folder. `SKILL.md` contains the agent's instructions, `references/` contains detailed command and upgrade guidance, and `scripts/` contains the Python helper and installer. The agent loads or runs those resources as the task requires.
 
-You choose which Markdown documents supply context. The tool can read decisions, rules and status entries written as paragraphs, lists or tables under recognized headings. It keeps them in a local SQLite database alongside their source references and history. You can also add a verified decision directly.
+Each project keeps its saved context in a local SQLite database. The Python helper imports decisions, rules and status entries from selected Markdown documents, retains source references and history, and writes task briefs as Markdown. It can also save a verified decision directly.
 
 It does not automatically read every chat or attach itself to every agent. The project documents, configured sources and maintenance procedure determine what it knows. Installing the skill and setting up a project's store are separate steps.
 
-## Requirements
+## Install the skill
 
-**Early release: v0.4.1.** You need Python 3.11+ and a local writable project directory. Use one designated person or agent to write to each store. The runtime uses Python's standard library; normal operation needs no model, API key or network connection.
-
-Windows and Linux are exercised in CI with Python 3.11 and 3.12. Other hosts and agent integrations may work but are not covered by that matrix. The runtime and project installer have no third-party Python dependencies. The optional skill installer and development checks use PyYAML from [requirements-dev.txt](requirements-dev.txt).
-
-## Quick start
-
-Clone the repository and create a disposable project:
+Clone the repository, then install `skills/context-keeper/` into the skill directory used by your coding agent:
 
 ```text
 git clone https://github.com/soin8293/context-keeper.git
 cd context-keeper
+python -X utf8 -m pip install -r requirements-dev.txt
+python -X utf8 scripts/skills.py install context-keeper --target-root /path/to/agent/skills
+```
+
+Replace `/path/to/agent/skills` with your agent's actual skill directory. The installer copies the skill folder, checks earlier installation receipts, keeps external backups and refuses to overwrite local edits.
+
+Make the installed skill available through your agent's normal discovery or reload procedure, then use the example request above. Installing these instructions does not create a project's database or upgrade an existing project's Python runner; those are separate steps covered by the skill.
+
+## Requirements
+
+**Early release: v0.4.1.** Use a coding agent that supports Agent Skills and can read project files and run Python. The bundled helper needs Python 3.11+ and a local writable project directory. Each store has one designated writer.
+
+The Python helper uses the standard library and makes no model or network calls. Your coding agent runs in its usual host and model environment.
+
+Windows and Linux are exercised in CI with Python 3.11 and 3.12. Other hosts and agent integrations may work but are not covered by that matrix. The runtime and project installer have no third-party Python dependencies. The optional skill installer and development checks use PyYAML from [requirements-dev.txt](requirements-dev.txt).
+
+## Set up a project store manually
+
+The skill guides the agent through project setup when authorized. These commands show the same helper workflow directly, using a practice project. If you have not already cloned the repository:
+
+```text
+git clone https://github.com/soin8293/context-keeper.git
+cd context-keeper
+```
+
+From the repository root, create the practice project:
+
+```text
 python -X utf8 -c "from pathlib import Path; Path('my-project').mkdir(exist_ok=True); Path('my-project/DECISIONS.md').write_text('## Decisions\nUse a local parser trial before deployment.\n', encoding='utf-8')"
 ```
 
@@ -79,7 +92,7 @@ For a real project, use its actual directory and check for an existing local or 
 
 Read the brief's status, sources and omissions. `FRESH` means its declared inputs are unchanged and no checked source issue remains; it is not proof of factual truth or complete project coverage.
 
-## Try the demo
+## Try the Python helper demo
 
 To see a fuller handoff with decisions from several areas of work, run the supplied fictional project from the repository root:
 
@@ -91,19 +104,6 @@ python -X utf8 examples/demo.py demo-work
 The first command creates the example project and its store. If your host requires a database overview or review of its notes, do that before the second command. The demo saves a complete handoff, a deliberately incomplete handoff with a small space allowance, and a result summary in `demo-work/`. It also checks that changing a source makes the earlier handoff stale and that a query leaves the database unchanged. It refuses to reuse an unrelated directory.
 
 See [the fixture](examples/project/), [expected handoff](examples/expected-handoff.md) and [testing evidence](docs/testing.md).
-
-## Install the reusable skill
-
-Project installation and skill discovery are separate. To install the self-contained skill folder into a discovery directory used by your agent:
-
-```text
-python -X utf8 -m pip install -r requirements-dev.txt
-python -X utf8 scripts/skills.py install context-keeper --target-root /path/to/agent/skills
-```
-
-Choose the actual discovery directory for your host. The installer copies only `skills/context-keeper`, checks a previous receipt before updates and preserves backups outside discovery. It refuses local edits rather than overwriting them. Windows directory locks use a guarded file-update fallback with rollback; pause consumers during that fallback.
-
-Installing a skill does not automatically wire projects, upgrade retained runners or guarantee automatic skill selection in every agent. The skill entrypoint is [SKILL.md](skills/context-keeper/SKILL.md).
 
 ## Continue with your own project
 
@@ -130,7 +130,7 @@ The [testing guide](docs/testing.md) explains coverage and remaining limits. See
 
 ## License and provenance
 
-[MIT](LICENSE). Context Keeper and its installation/testing helpers are maintained by `soin8293` through AmirahCo. This release contains only the selected tool, synthetic fixtures and public documentation. Private project databases, conversations and operational records are excluded. Python and optional development dependencies retain their own licenses. No SkillOpt, Harness², AODB or model-provider implementation is bundled.
+[MIT](LICENSE). Context Keeper and its installation/testing helpers are maintained by `soin8293` through AmirahCo. This release contains the skill, its Python helpers, fictional examples and documentation. Private project databases, conversations and operational records are excluded. Python and optional development dependencies retain their own licenses. No SkillOpt, Harness², AODB or model-provider implementation is bundled.
 
 ## AI assistance
 

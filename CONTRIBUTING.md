@@ -1,6 +1,8 @@
 # Contributing
 
-Start with the [README](README.md) and [architecture](docs/architecture.md). Open an issue or pull request describing the actual task, observed result and expected behavior. Include Python/OS versions and a minimal synthetic reproduction; exclude private databases, messages, identities, credentials and generated briefs from real projects.
+Context Keeper is an Agent Skill with bundled Python helpers. Changes may affect the agent's instructions in `SKILL.md`, its supporting references or the helper's behavior. Start with the [README](README.md) and [architecture](docs/architecture.md), then identify which part your change addresses.
+
+Open an issue or pull request describing the actual task, observed result and expected behavior. Include Python/OS versions and a minimal synthetic reproduction; exclude private databases, messages, identities, credentials and generated briefs from real projects.
 
 Install development requirements and run:
 

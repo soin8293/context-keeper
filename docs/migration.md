@@ -1,8 +1,8 @@
 # Migration and recovery
 
-Use this guide when a project already has Context Keeper and you want to update it without losing its decisions or history. New projects can follow the [README quick start](../README.md#quick-start).
+Use this guide when updating the Context Keeper Agent Skill or the Python helper already installed in a project. The saved decisions and history belong to the project's database and must be retained. New projects can follow [project-store setup](../README.md#set-up-a-project-store-manually).
 
-There are two installations to keep track of. The **skill folder** gives an agent its instructions. The **project runtime** is the Python code beside the project's database, usually invoked through `.context-keeper/ck.py`. Updating the skill folder alone leaves that project code in place.
+There are two installations to keep track of. The **skill folder** contains `SKILL.md`, references and scripts for the agent to use. The **project runtime** is a retained copy of the Python helper beside the project's database, usually invoked through `.context-keeper/ck.py`. Updating the skill folder alone leaves that project code in place.
 
 First find the runner and database the project actually uses, including any shared installation. Keep its writer ownership, source locations and history. The steps below let you inspect the old store, review any required schema changes, update its code and verify the retained data before resuming work.
 

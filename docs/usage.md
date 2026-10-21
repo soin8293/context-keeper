@@ -1,8 +1,20 @@
 # Using Context Keeper
 
-Context Keeper helps answer “what does the next person or agent need to know to continue this task?” You keep the project's decisions and progress in documents, import the relevant context, and generate a handoff when work resumes.
+Context Keeper is an Agent Skill. Its `SKILL.md` tells a coding agent how to find a project's saved context, retrieve the records relevant to a task and maintain those records without losing history. Its bundled Python helper performs the storage, lookup and brief-generation commands.
 
-Start with the [README quick start](../README.md#quick-start) if the project does not have an installation. For an existing project, read its instructions to find the store and its maintenance owner. Several projects may use a shared installation; an absent local folder does not mean you should create a new store.
+## Use it with your coding agent
+
+First [install the skill](../README.md#install-the-skill) in your agent's skill directory and follow that agent's discovery procedure. Then give it a request such as:
+
+> Use context-keeper to resume this project. Find its existing context store, retrieve the decisions relevant to the parser trial and flag anything that needs review.
+
+The agent reads the skill instructions and uses its helper commands as needed. Its response should identify the relevant context and any source or coverage problems. The skill does not automatically capture your entire conversation; the saved records come from selected project documents or explicit additions by the authorized writer.
+
+## Run the helper commands directly
+
+The rest of this guide shows the Python commands behind the skill. You can run them yourself or inspect them to understand what your agent is doing.
+
+Start with [project-store setup](../README.md#set-up-a-project-store-manually) if no installation exists. For an existing project, read its instructions to find the store and its maintenance owner. Several projects may use a shared installation; an absent local folder does not mean you should create a new store.
 
 ## Terms used by the tool
 

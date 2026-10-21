@@ -2,7 +2,7 @@
 
 ## 0.4.1
 
-First standalone release candidate of the maintained Context Keeper skill/runtime.
+First standalone release candidate of the Context Keeper Agent Skill and its bundled Python helper.
 
 - Read-only native queries, dry runs and source reconciliation reports.
 - Governing prose and corrected table/fence extraction with visible configured limits.
