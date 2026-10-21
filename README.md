@@ -1,6 +1,6 @@
 # Context Keeper
 
-Pick up an AI-assisted project with its decisions, rules and current state in view.
+Context Keeper is a skill that helps AI agents keep track of project decisions and pick up where they left off between sessions.
 
 Maintained by [AmirahCo](https://www.amirahco.us/).
 
@@ -34,7 +34,7 @@ The [usage guide](docs/usage.md) walks through those steps and explains the term
 
 ## How it fits into your project
 
-Context Keeper has two parts. A **local Python tool** stores context and generates handoffs. A **reusable agent skill** explains how an agent should find the right store, retrieve context and maintain it through the project's chosen writer.
+The skill tells an agent how to save project context, find it again and keep it current. It includes a local Python runner that stores the records and generates handoffs. Each project chooses who may update its saved context.
 
 You choose which Markdown documents supply context. The tool can read decisions, rules and status entries written as paragraphs, lists or tables under recognized headings. It keeps them in a local SQLite database alongside their source references and history. You can also add a verified decision directly.
 
