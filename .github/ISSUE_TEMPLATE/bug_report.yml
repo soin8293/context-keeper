@@ -1,0 +1,30 @@
+name: Bug report
+description: Report a reproducible Context Keeper defect with synthetic inputs.
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+      description: Explain the operation and what differed.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal synthetic reproduction
+      description: Include commands and a small made-up source file. Do not attach a real project store or private brief.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Version, Python and operating system
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Data privacy
+      options:
+        - label: This report contains no credentials, real private database, third-party messages or personal data.
+          required: true

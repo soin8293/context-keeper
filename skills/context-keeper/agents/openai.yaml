@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Keeper"
+  short_description: "Maintain project context with source-linked briefs"
+  default_prompt: "Use $context-keeper to resume this project's current context and preserve any confirmed decisions without losing history."
