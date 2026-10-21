@@ -1,6 +1,12 @@
 # Migration and recovery
 
-An installed skill and a project's retained runtime are separate. Preserve the actual existing runner, database, source-root identities, writer ownership and history before upgrading. A matching filename is not enough to choose a store.
+Use this guide when a project already has Context Keeper and you want to update it without losing its decisions or history. New projects can follow the [README quick start](../README.md#quick-start).
+
+There are two installations to keep track of. The **skill folder** gives an agent its instructions. The **project runtime** is the Python code beside the project's database, usually invoked through `.context-keeper/ck.py`. Updating the skill folder alone leaves that project code in place.
+
+First find the runner and database the project actually uses, including any shared installation. Keep its writer ownership, source locations and history. The steps below let you inspect the old store, review any required schema changes, update its code and verify the retained data before resuming work.
+
+Schema changes update the database's structure. They do not decide which historical instructions are still valid; reviewing those decisions is a separate maintenance task.
 
 ## Preview without changing data
 
@@ -17,7 +23,9 @@ The command examples use an explicit existing database path. Resolve the actual 
 
 ## Review source origins
 
-Legacy relative refs can have different ingestion roots. Prepare a private JSON object mapping reviewed source IDs to their actual existing roots. A root must come from project evidence, not the database's location or a guessed common directory.
+Older records may name a source such as `DECISIONS.md` without saving the directory it came from. If several projects have that filename, Context Keeper needs the original directory to check the correct file. This is the source's origin root.
+
+Prepare a private JSON object mapping reviewed source IDs to their actual existing roots. A root must come from project evidence, not the database's location or a guessed common directory.
 
 Use `--origin-map reviewed-origins.json` for mixed roots. `--source-root` maps unmapped sources to one common root only when the writer has verified that common origin. Leave ambiguous or missing roots unknown; preservation is preferable to invented provenance.
 

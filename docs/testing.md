@@ -1,6 +1,8 @@
 # Testing and evidence
 
-The repository runs behavior tests and synthetic end-to-end examples. It does not ship real project stores, private observations, transcripts or provider credentials.
+The checks exercise the work Context Keeper is meant to support: save project context, preserve it when a decision changes, build a useful handoff and notice when that handoff needs review.
+
+Tests use temporary fictional projects, and the demo runs the actual installed project tool. This page explains how to repeat the checks and where their coverage ends.
 
 ## Run the checks
 
@@ -19,15 +21,15 @@ Use a fresh demo directory. If your host requires a database overview/notes chec
 
 The Context Keeper suite contains 110 tests, covering the core retained-history workflow and targeted capture/retrieval/upgrade regressions. Shared installer tests separately exercise local-edit refusal, both Windows directory-rename failure points, verified external backups and rollback after failed transfers.
 
-Coverage includes:
-
-- Current/history separation, whole-record omissions, explicit source semantics and ingestion idempotency.
-- Governing prose, blank-separated table data, adjacent headers, backtick/tilde fences, wrapped records and consistent item limits.
-- Enforced read-only query paths, missing/invalid input and no accidental schema migration.
-- Origin/scope identity, numeric near-duplicate reports, source-byte/config drift and explicit acknowledgments.
-- Scope sets, required/mandatory records, partial amendments, correction chains and incomplete dependencies.
-- Complete-output caps, source URLs and compact scoped metadata after 1,500 unrelated records.
-- Legacy preservation manifests, external receipt inspection/adoption, maintenance gates and shared caller compatibility.
+| User expectation | What the tests exercise |
+| --- | --- |
+| Earlier decisions remain inspectable | Corrections and retirements preserve records and history; partial changes retain both applicable instructions. |
+| Project notes can become usable context | Decision paragraphs, lists and tables are captured across the tested formatting cases, with visible import limits and repeat-import behavior. |
+| Similar files remain distinct | Source locations and scopes stay separate; changed numbers and similar wording are reported for review. |
+| The handoff fits without hiding required context | Whole records and amendment groups stay intact, required omissions are marked incomplete, and the complete export respects its size limit. |
+| Changes are noticed | Record, source-file and source-configuration changes affect freshness; unrelated out-of-scope records do not change the tested scoped fingerprint. |
+| Reading context leaves the store unchanged | Queries and previews use read-only connections, and missing or incompatible stores fail instead of being created or migrated. |
+| An upgrade retains the existing project | Preservation hashes, guarded installation receipts, maintenance blocking and shared-runner path behavior are checked. |
 
 The demo exercises the actual project runner and generated artifacts. It checks normal freshness, expected incomplete output under a tight budget, source drift and unchanged DB bytes during a query. The [display example](../examples/expected-handoff.md) uses normalized paths; regenerate locally for a checkable live packet.
 

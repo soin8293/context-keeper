@@ -1,29 +1,48 @@
 # Context Keeper
 
-Keep project decisions, constraints and source-linked context current, then hand an agent a bounded brief for its next task.
+Pick up an AI-assisted project with its decisions, rules and current state in view.
 
 Maintained by [AmirahCo](https://www.amirahco.us/).
 
 [![Checks](https://github.com/soin8293/context-keeper/actions/workflows/checks.yml/badge.svg)](https://github.com/soin8293/context-keeper/actions/workflows/checks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Early release: v0.4.1.** The runtime uses Python's standard library and a local SQLite database. No model, API key, embedding service or network connection is needed for normal operation.
+## Why it exists
 
-## What it does
+You return to a project, start a new chat, or hand work to another agent. The files are still there, but the reasoning is scattered: what was approved, which approach was dropped, what must stay unchanged, and what happens next. Reconstructing all of that takes time. An old summary can also carry a decision that has since changed.
 
-- Captures bullets, content tables and governing prose from selected Markdown files.
-- Preserves old decisions when a correction supersedes them; partial amendments retain the valid earlier clauses.
-- Builds task briefs across explicit scopes, with linked sources, whole-record omissions and a complete-output limit.
-- Detects changed records and declared source files without writing to the database during queries or dry runs.
-- Reports missing sources, capture limits and unresolved changes for the project's writer to reconcile.
+Context Keeper keeps a local record of that project context, linked to the documents it came from. When you are ready to continue, it builds a short handoff for the task at hand. The handoff shows the selected decisions, their sources, and anything left out or needing review.
 
-The [synthetic handoff](examples/expected-handoff.md) shows an owner ruling, builder assignment and partial publication override together. Run the [demo](#try-the-demo) to generate and check the actual local artifacts.
+When a decision changes, the earlier version stays in the history. You can see both what applies now and how the project got there.
+
+## What using it looks like
+
+Suppose a project is testing a new adapter. The owner approves a trial with synthetic data, assigns the trial to a builder, and later says the report must stay local until publication is approved.
+
+The next agent needs those instructions together. Context Keeper can put them in one handoff, include the later publication restriction, and retain the earlier requirement to keep audit logs. Each item links back to its source so the agent can check the original wording.
+
+See the [example handoff](examples/expected-handoff.md) for the actual output from this scenario.
+
+The everyday workflow is:
+
+1. **Save the project context.** Keep decisions, rules and progress in selected project documents. The person or agent responsible for maintaining the store imports and reviews that material.
+2. **Ask for context for a task.** Generate a brief such as “resume the adapter trial,” choosing the relevant areas of the project.
+3. **Read and check the handoff.** Give it to the agent continuing the work. Follow its source links and review any omissions or unresolved changes.
+4. **Keep it current.** As the project changes, review the affected records, correct what changed, and create a new brief.
+
+The [usage guide](docs/usage.md) walks through those steps and explains the terms used in the commands.
+
+## How it fits into your project
+
+Context Keeper has two parts. A **local Python tool** stores context and generates handoffs. A **reusable agent skill** explains how an agent should find the right store, retrieve context and maintain it through the project's chosen writer.
+
+You choose which Markdown documents supply context. The tool can read decisions, rules and status entries written as paragraphs, lists or tables under recognized headings. It keeps them in a local SQLite database alongside their source references and history. You can also add a verified decision directly.
+
+It does not automatically read every chat or attach itself to every agent. The project documents, configured sources and maintenance procedure determine what it knows. Installing the skill and setting up a project's store are separate steps.
 
 ## Requirements
 
-- Python 3.11 or newer.
-- A local writable project directory for an initialized store.
-- One designated writer per store.
+**Early release: v0.4.1.** You need Python 3.11+ and a local writable project directory. Use one designated person or agent to write to each store. The runtime uses Python's standard library; normal operation needs no model, API key or network connection.
 
 Windows and Linux are exercised in CI with Python 3.11 and 3.12. Other hosts and agent integrations may work but are not covered by that matrix. The runtime and project installer have no third-party Python dependencies. The optional skill installer and development checks use PyYAML from [requirements-dev.txt](requirements-dev.txt).
 
@@ -37,14 +56,14 @@ cd context-keeper
 python -X utf8 -c "from pathlib import Path; Path('my-project').mkdir(exist_ok=True); Path('my-project/DECISIONS.md').write_text('## Decisions\nUse a local parser trial before deployment.\n', encoding='utf-8')"
 ```
 
-Preview project installation, then apply without ingestion:
+Preview the installation, then create the project's context store without importing documents yet:
 
 ```text
 python -X utf8 skills/context-keeper/scripts/install.py project my-project
 python -X utf8 skills/context-keeper/scripts/install.py project my-project --apply --no-ingest
 ```
 
-Read the generated `.context-keeper/context.agent.json`. Follow any database-governance procedure required by your host before the next commands. Then ingest and build a handoff:
+Read the generated `.context-keeper/context.agent.json` notes and follow your project's database procedures. Then import the practice decision and create a handoff:
 
 ```text
 python -X utf8 my-project/.context-keeper/ck.py ingest
@@ -52,18 +71,24 @@ python -X utf8 my-project/.context-keeper/ck.py brief "implement the parser tria
 python -X utf8 my-project/.context-keeper/ck.py check .context-keeper/briefs/parser-v1.md
 ```
 
-Normal project runners anchor paths to their owning project. The brief above is saved under `my-project/.context-keeper/briefs/`. Existing output files are never overwritten. Add `--wire-agents` during installation only when you want a marked instruction block added to that project's `AGENTS.md`.
+`ingest` imports context from the project documents. `brief` writes a handoff of at most 6,000 characters. `check` tells you whether the checked records and source files have changed or need review.
+
+Open `my-project/.context-keeper/briefs/parser-v1.md` to read the result. New exports need new filenames; existing briefs are preserved. Add `--wire-agents` during installation if you want Context Keeper guidance added to the project's `AGENTS.md`.
+
+For a real project, use its actual directory and check for an existing local or shared installation first. See [migration and recovery](docs/migration.md) when upgrading an existing installation.
 
 Read the brief's status, sources and omissions. `FRESH` means its declared inputs are unchanged and no checked source issue remains; it is not proof of factual truth or complete project coverage.
 
 ## Try the demo
+
+To see a fuller handoff with decisions from several areas of work, run the supplied fictional project from the repository root:
 
 ```text
 python -X utf8 examples/demo.py demo-work --prepare-only
 python -X utf8 examples/demo.py demo-work
 ```
 
-If your host requires a database overview/notes check, perform it between these commands. The demo uses only supplied synthetic material. It generates a normal handoff and an intentionally incomplete tight-budget handoff, checks source drift, and verifies that a query leaves the database bytes unchanged. It refuses to reuse an unrelated directory.
+The first command creates the example project and its store. If your host requires a database overview or review of its notes, do that before the second command. The demo saves a complete handoff, a deliberately incomplete handoff with a small space allowance, and a result summary in `demo-work/`. It also checks that changing a source makes the earlier handoff stale and that a query leaves the database unchanged. It refuses to reuse an unrelated directory.
 
 See [the fixture](examples/project/), [expected handoff](examples/expected-handoff.md) and [testing evidence](docs/testing.md).
 
@@ -80,39 +105,17 @@ Choose the actual discovery directory for your host. The installer copies only `
 
 Installing a skill does not automatically wire projects, upgrade retained runners or guarantee automatic skill selection in every agent. The skill entrypoint is [SKILL.md](skills/context-keeper/SKILL.md).
 
-## Common operations
+## Continue with your own project
 
-```text
-python -X utf8 my-project/.context-keeper/ck.py capabilities
-python -X utf8 my-project/.context-keeper/ck.py search "parser" --scope review --scope build
-python -X utf8 my-project/.context-keeper/ck.py show 1
-python -X utf8 my-project/.context-keeper/ck.py brief "parser work" --scope review --scope build --require 1 --budget 4000 --output-budget 8000
-python -X utf8 my-project/.context-keeper/ck.py reconcile --json
-python -X utf8 my-project/.context-keeper/ck.py ingest --dry-run
-```
+The [usage guide](docs/usage.md) explains how to resume a task, find an earlier decision, review a project update and understand a handoff's status. The [command reference](skills/context-keeper/references/commands.md) covers flags and source configuration when you need finer control.
 
-The authorized writer uses `add`, `correct`, `retire`, `amend` and ingestion after reviewing source changes. For a partial override, add the precise new ruling and link it with `amend BASE_ID NEW_ID --reason "the affected clause"`; both records remain available. Use `show` to read back the exact text, status, source and history.
+For implementation details, read the [architecture](docs/architecture.md). For an existing installation, use [migration and recovery](docs/migration.md) to retain the store and its history while upgrading the tool.
 
-`--budget` bounds selected record text. `--output-budget` bounds the complete Markdown, including citations and metadata. Whole amendment groups either fit together or produce an explicit incomplete result. No records are clipped to make a packet appear complete.
+## Reading a handoff responsibly
 
-See [commands and source configuration](skills/context-keeper/references/commands.md), [architecture](docs/architecture.md) and [migration and recovery](docs/migration.md).
+A brief is a selected view of the context you supplied. Read its sources, status and omissions before relying on it. It may leave out lower-ranked context to fit the requested length, even when its checks pass.
 
-## Exit codes and ownership
-
-| Operation | Meaning |
-| --- | --- |
-| `brief` | 0: artifact produced without required-context issues; 1: explicitly incomplete review artifact; 2: invalid input, incompatible store or impossible output cap |
-| `check` | 0: unchanged declared inputs with no unresolved issues; 1: stale/incomplete; 2: invalid/missing input |
-| `reconcile` | 0: clear; 1: issues or review leads; 2: invalid input |
-| Generated runner | 75: adjacent `.maintenance` flag blocks access before the database is opened |
-
-Ordinary budget omissions still limit coverage even when `brief` returns 0. Query commands and ingestion dry runs use SQLite read-only connections. Initializing, ingesting, correcting, acknowledging sources or applying migrations are writer operations; the tool does not grant authority to perform them.
-
-## Limits
-
-Markdown extraction and lexical ranking are deterministic heuristics. General narrative, ambiguous authority, contradictory decisions and missing source roots need review. A changed number may be reported as a near-duplicate rather than automatically accepted. Source acknowledgments record a writer's review, not proof of correctness.
-
-This is a local, single-writer context tool. It is not a distributed database, autonomous memory service, dispatcher or semantic truth engine. It does not inject context into every host or reconcile historical decisions automatically. Keep stores, backups and generated briefs private; use synthetic reproductions in issues.
+Capture and task matching use rules and word matching. Some material can be missed. Conflicting decisions, changed wording and missing source files need review by the project's writer. Keep real stores, backups and generated briefs private, and use fictional examples when reporting a problem.
 
 ## Development and support
 

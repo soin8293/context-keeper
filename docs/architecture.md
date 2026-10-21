@@ -1,6 +1,16 @@
 # Architecture
 
-Context Keeper is a local Python CLI over a project-owned SQLite store. The reusable skill tells an agent how to locate the owning store, retrieve a bounded task packet and route maintenance through the authorized writer.
+Context Keeper turns selected project documents into a current record of decisions, rules and progress. It uses that record to prepare a handoff for the next task, while keeping earlier decisions available in history.
+
+This page explains the implementation. Start with the [usage guide](usage.md) for everyday operation.
+
+## From project notes to a handoff
+
+The original documents explain what the project decided. Context Keeper saves individual entries from those documents in a local SQLite store, with links back to their sources. The store tracks which entries are current and which were replaced or retired.
+
+When an agent resumes work, the Python command-line tool selects context for that task and exports a Markdown brief. Its size allowance keeps the handoff manageable; its coverage section shows what was left out. A later check can detect changes to the saved context or the source files.
+
+The reusable skill supplies instructions for this workflow. It tells the agent where to look for the project's store, how to retrieve context and who may maintain it. The host still determines how the skill is discovered and how the brief reaches the agent.
 
 ## Components
 
@@ -16,12 +26,12 @@ Context Keeper is a local Python CLI over a project-owned SQLite store. The reus
 
 ## Data flow
 
-1. The writer selects governing Markdown and configures active paths/limits if defaults do not fit.
-2. Ingestion extracts candidates and records their relative reference plus explicit origin root and scope. It reports near-duplicates, caps and stale sources rather than silently deciding authority.
-3. Verified corrections add a new record and supersede the old one. A partial override links both records without discarding valid earlier clauses.
-4. Retrieval selects scope sets and global policy, expands required amendment dependencies, ranks task context and packs whole groups.
-5. The brief contains source links, status/omissions, a record budget and complete-output cap, plus compact freshness metadata.
-6. A later check compares the declared candidate/source boundary and reports stale or incomplete context without modifying the database.
+1. The writer chooses which project documents supply context. Optional source configuration controls paths and import limits.
+2. Import saves entries with their document reference, location and area-of-work label (scope). It reports similar entries, limits and changed sources for review.
+3. A verified correction links an old record to its replacement, keeping the original. It can reuse a matching replacement already imported. A partial change links both instructions so valid earlier clauses remain available.
+4. A brief request selects the relevant scopes and ranks their context for the task. Required records and linked amendments stay together.
+5. The exported brief includes source links, status and omissions. Separate limits control selected text and the complete output, including its supporting information.
+6. A later check compares saved fingerprints of records and source files. It reports changes or unresolved issues without updating the database.
 
 ## Schema and history
 
